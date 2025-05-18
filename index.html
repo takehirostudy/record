@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage - Brain Hacker</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h1 { font-size: 1.8em; margin-bottom: 20px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 10px; }
+    .date-link { text-decoration: none; color: #007acc; }
+    .date-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>📊 Manage Your Task History</h1>
+  <button onclick="location.href='task.html'">📝 今日のタスクページへ</button>
+  <h2>📅 過去の記録</h2>
+  <ul id="archiveList"></ul>
+
+  <script>
+    const list = document.getElementById('archiveList');
+    const keys = Object.keys(localStorage).filter(key => key.startsWith('task_') && key.endsWith('_grid'));
+    const dates = [...new Set(keys.map(k => k.replace(/^task_(.*?)_grid$/, '$1')))].sort().reverse();
+
+    dates.forEach(date => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = `#`;
+      a.className = 'date-link';
+      a.textContent = date;
+      a.addEventListener('click', () => {
+        const grid = localStorage.getItem(`task_${date}_grid`);
+        const title = localStorage.getItem(`task_${date}_title`);
+        alert(`タイトル: ${title || '（なし）'}\n内容: ${grid ? '保存済み' : 'なし'}`);
+      });
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+  </script>
+</body>
+</html>
