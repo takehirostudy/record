@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brain Hacker</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .title-area {
+      flex-grow: 1;
+    }
+    
+    .nav-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .nav-btn {
+      padding: 8px 15px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    
+    .title-input {
+      font-size: 2em;
+      width: 100%;
+      border: none;
+      background-color: transparent;
+      color: #333;
+      outline: none;
+      text-align: center;
+      margin: 10px 0;
+    }
+    
+    .title-input::placeholder {
+      color: #999;
+    }
+    
+    #dateDisplay {
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 15px;
+      background-color: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .color-btn {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button {
+      padding: 6px 10px;
+      font-size: 14px;
+      background-color: #f1f1f1;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #333;
+    }
+    
+    button:hover {
+      background-color: #e9e9e9;
+    }
+    
+    .size-btn {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f1f1f1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(20, 1fr);
+      grid-template-rows: repeat(16, 1fr);
+      width: 100%;
+      height: 75vh;
+      gap: 1px;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 2px;
+    }
+    
+    .cell {
+      border: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 1px;
+      font-size: 1vw;
+      background-color: white;
+    }
+    
+    .cell.selected {
+      outline: 2px solid #4285f4;
+    }
+    
+    .editable {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      flex-direction: column;
+      font-size: 1vw;
+      text-align: left;
+      padding: 2px;
+      border: none;
+      outline: none;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    
+    .cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    
+    /* Modal for sharing */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 5px;
+      width: 80%;
+      max-width: 500px;
+    }
+    
+    .close-btn {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .close-btn:hover {
+      color: #333;
+    }
+    
+    .share-input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .copy-btn {
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      float: right;
+    }
+  </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title-area">
+        <div id="dateDisplay"></div>
+      </div>
+      <div class="nav-buttons">
+        <button id="shareBtn" class="nav-btn">Share</button>
+        <a href="record.html" class="nav-btn">Record</a>
+      </div>
+    </div>
+    
+    <input class="title-input" id="pageTitle" placeholder="Brain Hacker Home" />
+    
+    <div class="controls">
+      <button class="color-btn" data-color="#ffa500" style="background-color:#ffa500;"></button>
+      <button class="color-btn" data-color="#f2c1c1" style="background-color:#f2c1c1;"></button>
+      <button class="color-btn" data-color="#ffef5b" style="background-color:#ffef5b;"></button>
+      <button class="color-btn" data-color="#d0f0c0" style="background-color:#d0f0c0;"></button>
+      <button class="color-btn" data-color="#a2dff7" style="background-color:#a2dff7;"></button>
+      <button class="color-btn" data-color="#d8d8d8" style="background-color:#d8d8d8;"></button>
+      <button class="color-btn" data-color="#ffffff" style="background-color:#ffffff;"></button>
+      <button id="mergeBtn">integrate</button>
+      <button id="splitBtn">separate</button>
+      <button id="insertCheckboxBtn">✅ check</button>
+      <button id="insertBoldCheckboxBtn">☑️ check</button>
+      <button id="uploadImageBtn">🖼️</button>
+      <input type="file" id="imageInput" accept="image/*" style="display: none;" />
+      <button class="size-btn" data-size="2.56vw" style="font-size:2.56vw;">A</button>
+      <button class="size-btn" data-size="1.92vw" style="font-size:1.92vw;">A</button>
+      <button class="size-btn" data-size="1.6vw" style="font-size:1.6vw;">A</button>
+      <button class="size-btn" data-size="1.28vw" style="font-size:1.28vw;">A</button>
+      <button class="size-btn" data-size="0.8vw" style="font-size:0.8vw;">A</button>
+      <button id="resetBtn">🔄</button>
+      <button id="deleteBtn">🗑️</button>
+      <button id="alignTopLeftBtn">left alignment</button>
+      <button id="alignCenterBtn">centered</button>
+    </div>
+    
+    <div class="grid-container" id="grid"></div>
+  </div>
+
+  <!-- Share Modal -->
+  <div id="shareModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <h2>Share Your Brain Hacker</h2>
+      <p>Copy this link to share your Brain Hacker with others:</p>
+      <input type="text" id="shareLink" class="share-input" readonly>
+      <button id="copyBtn" class="copy-btn">Copy Link</button>
+    </div>
+  </div>
+
+<script>
+// === 日付とタイトル ===
+function getTodayKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+function getYesterdayKey() {
+  const now = new Date();
+  now.setDate(now.getDate() - 1);
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+document.getElementById("dateDisplay").textContent = `${getTodayKey()} (${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date().getDay()]})`;
+document.getElementById("pageTitle").value = localStorage.getItem("pageTitle") || "Brain Hacker Home";
+document.getElementById("pageTitle").addEventListener("input", () => {
+  localStorage.setItem("pageTitle", document.getElementById("pageTitle").value);
+});
+
+// === グリッド生成 ===
+const pageTitle = document.getElementById("pageTitle");
+pageTitle.addEventListener("input", saveState);
+const grid = document.getElementById("grid");
+for (let row = 0; row < 16; row++) {
+  for (let col = 0; col < 20; col++) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.dataset.row = row;
+    cell.dataset.col = col;
+    const editable = document.createElement("div");
+    editable.className = "editable";
+    editable.contentEditable = true;
+    const img = document.createElement("img");
+    img.style.display = "none";
+    cell.appendChild(editable);
+    cell.appendChild(img);
+    grid.appendChild(cell);
+  }
+}
+
+// === セル選択（Shiftドラッグ対応） ===
+let isDragging = false, dragStart = null;
+const selectedCells = new Set();
+grid.addEventListener("mousedown", e => {
+  const cell = e.target.closest(".cell");
+  if (!cell) return;
+  const row = +cell.dataset.row, col = +cell.dataset.col;
+  if (e.shiftKey) {
+    isDragging = true;
+    dragStart = { row, col };
+  } else {
+    selectedCells.clear();
+    document.querySelectorAll(".cell").forEach(c => c.classList.remove("selected"));
+    cell.classList.add("selected");
+    selectedCells.add(`${row},${col}`);
+  }
+});
+grid.addEventListener("mousemove", e => {
+  if (!isDragging || !e.shiftKey) return;
+  const cell = e.target.closest(".cell");
+  if (!cell) return;
+  const endRow = +cell.dataset.row, endCol = +cell.dataset.col;
+  const minRow = Math.min(dragStart.row, endRow);
+  const maxRow = Math.max(dragStart.row, endRow);
+  const minCol = Math.min(dragStart.col, endCol);
+  const maxCol = Math.max(dragStart.col, endCol);
+  selectedCells.clear();
+  document.querySelectorAll(".cell").forEach(c => c.classList.remove("selected"));
+  for (let r = minRow; r <= maxRow; r++) {
+    for (let c = minCol; c <= maxCol; c++) {
+      const target = document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
+      if (target) {
+        target.classList.add("selected");
+        selectedCells.add(`${r},${c}`);
+      }
+    }
+  }
+});
+window.addEventListener("mouseup", () => isDragging = false);
+
+// === 状態保存と復元 ===
+function saveState() {
+  const state = [...document.querySelectorAll(".cell")].map(cell => {
+    const editable = cell.querySelector(".editable");
+    const img = cell.querySelector("img");
+    editable.querySelectorAll("input[type='checkbox']").forEach(cb => {
+      cb.checked ? cb.setAttribute("checked", "checked") : cb.removeAttribute("checked");
+    });
+    return {
+      row: cell.dataset.row,
+      col: cell.dataset.col,
+      html: editable.innerHTML,
+      fontSize: editable.style.fontSize,
+      bgColor: cell.style.backgroundColor,
+      display: cell.style.display,
+      gridRow: cell.style.gridRow,
+      gridColumn: cell.style.gridColumn,
+      imgSrc: (img.src && img.src !== "undefined" && img.src !== "null") ? img.src : "",
+      alignItems: editable.style.alignItems,
+      justifyContent: editable.style.justifyContent,
+      textAlign: editable.style.textAlign
+    };
+  });
+  localStorage.setItem(`brainhack-${getTodayKey()}`, JSON.stringify(state));
+}
+
+function restoreState() {
+  let state = localStorage.getItem(`brainhack-${getTodayKey()}`);
+  if (!state) {
+    const yState = localStorage.getItem(`brainhack-${getYesterdayKey()}`);
+    if (yState) {
+      const parsed = JSON.parse(yState);
+      parsed.forEach(c => {
+        const temp = document.createElement("div");
+        temp.innerHTML = c.html;
+        
+        // 太字のチェックボックス項目を削除
+        const filtered = [...temp.childNodes].filter(node => {
+          const cb = node.querySelector?.("input[type='checkbox']");
+          const sp = node.querySelector?.("span");
+          return !(cb && sp?.style.fontWeight === "bold");
+        });
+        
+        // 通常のチェックボックスのチェックと取り消し線をリセット
+        filtered.forEach(node => {
+          const cb = node.querySelector?.("input[type='checkbox']");
+          const sp = node.querySelector?.("span");
+          if (cb && sp && !sp.style.fontWeight.includes("bold")) {
+            cb.removeAttribute("checked");
+            sp.style.textDecoration = "none";
+          }
+        });
+        
+        const wrapper = document.createElement("div");
+        filtered.forEach(n => wrapper.appendChild(n.cloneNode(true)));
+        c.html = wrapper.innerHTML;
+      });
+      state = JSON.stringify(parsed);
+    }
+  }
+ if (!state) return;
+  const parsed = JSON.parse(state);
+  parsed.forEach(data => {
+    const cell = document.querySelector(`.cell[data-row='${data.row}'][data-col='${data.col}']`);
+    const editable = cell.querySelector(".editable");
+    const img = cell.querySelector("img");
+    editable.innerHTML = typeof data.html === 'string' ? data.html : "";
+    editable.querySelectorAll("input[type='checkbox']").forEach(cb => {
+      cb.checked = cb.hasAttribute("checked");
+    });
+    editable.style.fontSize = data.fontSize;
+    editable.style.alignItems = data.alignItems;
+    editable.style.justifyContent = data.justifyContent;
+    editable.style.textAlign = data.textAlign;
+    cell.style.backgroundColor = data.bgColor;
+    cell.style.display = data.display;
+    cell.style.gridRow = data.gridRow;
+    cell.style.gridColumn = data.gridColumn;
+    if (data.imgSrc && data.imgSrc.startsWith("data:image/")) {
+      img.src = data.imgSrc;
+      img.style.display = 'block';
+    } else {
+      img.src = "";
+      img.style.display = 'none';
+    }
+    editable.querySelectorAll("input[type='checkbox']").forEach(cb => {
+      cb.checked = cb.hasAttribute("checked");
+      const sp = cb.nextElementSibling;
+      if (sp) sp.style.textDecoration = cb.checked ? "line-through" : "none";
+      cb.addEventListener("change", () => {
+        if (sp) sp.style.textDecoration = cb.checked ? "line-through" : "none";
+        saveState();
+      });
+    });
+  });
+}
+
+restoreState();
+window.addEventListener("beforeunload", saveState);
+// === 色変更機能 ===
+for (const btn of document.querySelectorAll(".color-btn")) {
+  btn.addEventListener("click", () => {
+    const color = btn.dataset.color;
+    for (const key of selectedCells) {
+      const [r, c] = key.split(',');
+      const cell = document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
+      if (cell) cell.style.backgroundColor = color;
+    }
+    saveState();
+  });
+}
+
+// === 画像アップロード機能 ===
+document.getElementById("uploadImageBtn").addEventListener("click", () => {
+  if (selectedCells.size !== 1) return alert("画像は1セルのみに添付可能です");
+  document.getElementById("imageInput").click();
+});
+
+document.getElementById("imageInput").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const [r, c] = [...selectedCells][0].split(',');
+    const img = document.querySelector(`.cell[data-row='${r}'][data-col='${c}'] img`);
+    img.src = ev.target.result;
+    img.style.display = "block";
+    saveState();
+  };
+  reader.readAsDataURL(file);
+});
+
+// === チェックボックス追加（普通） ===
+document.getElementById("insertCheckboxBtn").addEventListener("click", () => {
+  for (const key of selectedCells) {
+    const [r, c] = key.split(',');
+    const editable = document.querySelector(`.cell[data-row='${r}'][data-col='${c}'] .editable`);
+    const wrapper = document.createElement("span");
+    wrapper.style.display = "inline-flex";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    const span = document.createElement("span");
+    span.textContent = "項目";
+    span.contentEditable = true;
+    cb.addEventListener("change", () => {
+      span.style.textDecoration = cb.checked ? "line-through" : "none";
+      saveState();
+    });
+    wrapper.append(cb, span);
+    editable.appendChild(wrapper);
+  }
+  saveState();
+});
+
+// === チェックボックス追加（太字） ===
+document.getElementById("insertBoldCheckboxBtn").addEventListener("click", () => {
+  for (const key of selectedCells) {
+    const [r, c] = key.split(',');
+    const editable = document.querySelector(`.cell[data-row='${r}'][data-col='${c}'] .editable`);
+    const wrapper = document.createElement("span");
+    wrapper.style.display = "inline-flex";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    const span = document.createElement("span");
+    span.textContent = "項目";
+    span.contentEditable = true;
+    span.style.fontWeight = "bold";
+    cb.addEventListener("change", () => {
+      span.style.textDecoration = cb.checked ? "line-through" : "none";
+      saveState();
+    });
+    wrapper.append(cb, span);
+    editable.appendChild(wrapper);
+  }
+  saveState();
+});
+// === セル結合 ===
+document.getElementById("mergeBtn").addEventListener("click", () => {
+  const coords = Array.from(selectedCells).map(k => k.split(',').map(Number));
+  const rows = coords.map(c => c[0]);
+  const cols = coords.map(c => c[1]);
+  const minRow = Math.min(...rows), maxRow = Math.max(...rows);
+  const minCol = Math.min(...cols), maxCol = Math.max(...cols);
+  if ((maxRow - minRow + 1) * (maxCol - minCol + 1) !== selectedCells.size) return alert("連続する長方形を選択してください");
+  const base = document.querySelector(`.cell[data-row='${minRow}'][data-col='${minCol}']`);
+  base.style.gridRow = `${minRow + 1} / span ${maxRow - minRow + 1}`;
+  base.style.gridColumn = `${minCol + 1} / span ${maxCol - minCol + 1}`;
+  for (const [r, c] of coords) {
+    if (r === minRow && c === minCol) continue;
+    document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`).style.display = "none";
+  }
+  saveState();
+});
+
+// === セル分離 ===
+document.getElementById("splitBtn").addEventListener("click", () => {
+  if (selectedCells.size !== 1) return;
+  const [r, c] = [...selectedCells][0].split(',').map(Number);
+  const base = document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
+  const rowStart = r;
+  const rowSpan = parseInt(base.style.gridRow?.split("span ")[1]) || 1;
+  const colStart = c;
+  const colSpan = parseInt(base.style.gridColumn?.split("span ")[1]) || 1;
+  base.style.gridRow = "";
+  base.style.gridColumn = "";
+  for (let i = rowStart; i < rowStart + rowSpan; i++) {
+    for (let j = colStart; j < colStart + colSpan; j++) {
+      const cell = document.querySelector(`.cell[data-row='${i}'][data-col='${j}']`);
+      cell.style.display = "flex";
+    }
+  }
+  saveState();
+});
+
+// === 整列（中央 / 左） ===
+document.getElementById("alignCenterBtn").addEventListener("click", () => {
+  for (const key of selectedCells) {
+    const [r, c] = key.split(',');
+    const editable = document.querySelector(`.cell[data-row='${r}'][data-col='${c}'] .editable`);
+    editable.style.alignItems = "center";
+    editable.style.justifyContent = "center";
+    editable.style.textAlign = "center";
+  }
+  saveState();
+});
+document.getElementById("alignTopLeftBtn").addEventListener("click", () => {
+  for (const key of selectedCells) {
+    const [r, c] = key.split(',');
+    const editable = document.querySelector(`.cell[data-row='${r}'][data-col='${c}'] .editable`);
+    editable.style.alignItems = "flex-start";
+    editable.style.justifyContent = "flex-start";
+    editable.style.textAlign = "left";
+  }
+  saveState();
+});
+
+// === 削除ボタン ===
+document.getElementById("deleteBtn").addEventListener("click", () => {
+  for (const key of selectedCells) {
+    const [r, c] = key.split(',');
+    const cell = document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
+    cell.querySelector(".editable").innerHTML = "";
+    const img = cell.querySelector("img");
+    img.src = "";
+    img.style.display = "none";
+  }
+  saveState();
+});
+
+// === フォントサイズ変更 ===
+for (const btn of document.querySelectorAll(".size-btn")) {
+  btn.addEventListener("click", () => {
+    const size = btn.dataset.size;
+    for (const key of selectedCells) {
+      const [r, c] = key.split(',');
+      const editable = document.querySelector(`.cell[data-row='${r}'][data-col='${c}'] .editable`);
+      editable.style.fontSize = size;
+    }
+    saveState();
+  });
+}
+
+// === リセットボタン ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("全データをリセットしますか？")) {
+    // 各セルの内容、画像、スタイルをクリア
+    document.querySelectorAll(".cell").forEach(cell => {
+      const editable = cell.querySelector(".editable");
+      const img = cell.querySelector("img");
+      editable.innerHTML = "";
+      editable.style.fontSize = "";
+      editable.style.alignItems = "";
+      editable.style.justifyContent = "";
+      editable.style.textAlign = "";
+      cell.style.backgroundColor = "";
+      cell.style.display = "flex";
+      cell.style.gridRow = "";
+      cell.style.gridColumn = "";
+      img.src = "";
+      img.style.display = "none";
+    });
+    saveState();
+    localStorage.removeItem(`brainhack-${getTodayKey()}`);
+    // タイトルは削除しない
+    location.reload();
+  }
+});
+// シェアモーダル関連の処理
+const shareBtn = document.getElementById("shareBtn");
+const shareModal = document.getElementById("shareModal");
+const shareLink = document.getElementById("shareLink");
+const copyBtn = document.getElementById("copyBtn");
+const closeBtn = document.querySelector(".close-btn");
+
+// シェアボタンをクリックしたときの処理
+shareBtn.addEventListener("click", () => {
+  // 現在の状態をJSONに変換
+  const state = [...document.querySelectorAll(".cell")].map(cell => {
+    const editable = cell.querySelector(".editable");
+    const img = cell.querySelector("img");
+    editable.querySelectorAll("input[type='checkbox']").forEach(cb => {
+      cb.checked ? cb.setAttribute("checked", "checked") : cb.removeAttribute("checked");
+    });
+    return {
+      row: cell.dataset.row,
+      col: cell.dataset.col,
+      html: editable.innerHTML,
+      fontSize: editable.style.fontSize,
+      bgColor: cell.style.backgroundColor,
+      display: cell.style.display,
+      gridRow: cell.style.gridRow,
+      gridColumn: cell.style.gridColumn,
+      imgSrc: (img.src && img.src !== "undefined" && img.src !== "null" && img.style.display !== 'none') ? img.src : "",
+      alignItems: editable.style.alignItems,
+      justifyContent: editable.style.justifyContent,
+      textAlign: editable.style.textAlign
+    };
+  });
+  
+  // タイトルも含める
+  const fullState = {
+    title: document.getElementById("pageTitle").value,
+    cells: state
+  };
+  
+  // Base64エンコードして圧縮
+  const stateStr = JSON.stringify(fullState);
+  const compressedState = btoa(encodeURIComponent(stateStr));
+  
+  // URLに埋め込む
+  const url = new URL(window.location.href);
+  url.searchParams.set("data", compressedState);
+  
+  // モーダル内のテキストボックスに表示
+  shareLink.value = url.toString();
+  
+  // モーダルを表示
+  shareModal.style.display = "block";
+});
+
+// コピーボタンの処理
+copyBtn.addEventListener("click", () => {
+  shareLink.select();
+  document.execCommand("copy");
+  copyBtn.textContent = "Copied!";
+  setTimeout(() => {
+    copyBtn.textContent = "Copy Link";
+  }, 2000);
+});
+
+// モーダルを閉じる処理
+closeBtn.addEventListener("click", () => {
+  shareModal.style.display = "none";
+});
+
+// モーダル外をクリックしたときも閉じる
+window.addEventListener("click", (e) => {
+  if (e.target === shareModal) {
+    shareModal.style.display = "none";
+  }
+});
+
+// URLからデータを読み込む処理（ページ読み込み時）
+window.addEventListener("DOMContentLoaded", () => {
+  const url = new URL(window.location.href);
+  const data = url.searchParams.get("data");
+  
+  if (data) {
+    try {
+      // Base64デコードして解凍
+      const decompressedState = JSON.parse(decodeURIComponent(atob(data)));
+      
+      // タイトルを設定
+      if (decompressedState.title) {
+        document.getElementById("pageTitle").value = decompressedState.title;
+        localStorage.setItem("pageTitle", decompressedState.title);
+      }
+      
+      // セルのデータを適用
+      if (decompressedState.cells && Array.isArray(decompressedState.cells)) {
+        decompressedState.cells.forEach(cellData => {
+          const cell = document.querySelector(`.cell[data-row='${cellData.row}'][data-col='${cellData.col}']`);
+          if (!cell) return;
+          
+          const editable = cell.querySelector(".editable");
+          const img = cell.querySelector("img");
+          
+          editable.innerHTML = typeof cellData.html === 'string' ? cellData.html : "";
+          editable.style.fontSize = cellData.fontSize;
+          editable.style.alignItems = cellData.alignItems;
+          editable.style.justifyContent = cellData.justifyContent;
+          editable.style.textAlign = cellData.textAlign;
+          
+          cell.style.backgroundColor = cellData.bgColor;
+          cell.style.display = cellData.display;
+          cell.style.gridRow = cellData.gridRow;
+          cell.style.gridColumn = cellData.gridColumn;
+          
+          if (cellData.imgSrc && cellData.imgSrc.startsWith("data:image/")) {
+            img.src = cellData.imgSrc;
+            img.style.display = 'block';
+          } else {
+            img.src = "";
+            img.style.display = 'none';
+          }
+          
+          // チェックボックスの状態を復元
+          editable.querySelectorAll("input[type='checkbox']").forEach(cb => {
+            cb.checked = cb.hasAttribute("checked");
+            const sp = cb.nextElementSibling;
+            if (sp) sp.style.textDecoration = cb.checked ? "line-through" : "none";
+            cb.addEventListener("change", () => {
+              if (sp) sp.style.textDecoration = cb.checked ? "line-through" : "none";
+              saveState();
+            });
+          });
+        });
+        
+        // 共有されたデータを保存
+        saveState();
+      }
+    } catch (error) {
+      console.error("Error loading shared data:", error);
+    }
+  }
+});
+
+// === Share Modal 機能 ===
+document.getElementById("shareBtn").addEventListener("click", () => {
+  // データの取得
+  const state = [...document.querySelectorAll(".cell")].map(cell => {
+    const editable = cell.querySelector(".editable");
+    const img = cell.querySelector("img");
+    editable.querySelectorAll("input[type='checkbox']").forEach(cb => {
+      cb.checked ? cb.setAttribute("checked", "checked") : cb.removeAttribute("checked");
+    });
+    
+    // 必要最小限のデータだけを抽出
+    const cellData = {
+      r: cell.dataset.row,
+      c: cell.dataset.col,
+      h: editable.innerHTML,
+      f: editable.style.fontSize || "",
+      b: cell.style.backgroundColor || "",
+      d: cell.style.display || "",
+      gr: cell.style.gridRow || "",
+      gc: cell.style.gridColumn || "",
+      a: editable.style.textAlign || ""
+    };
+    
+    // 画像がある場合のみ含める
+    if (img.src && img.src !== "undefined" && img.src !== "null" && img.src.startsWith("data:image/")) {
+      cellData.i = img.src;
+    }
+    
+    return cellData;
+  });
+  
+  // 圧縮用のデータ構造
+  const shareData = {
+    t: document.getElementById("pageTitle").value,
+    d: getTodayKey(),
+    c: state.filter(c => c.h || c.i || c.b || c.gr) // 空のセルは除外
+  };
+  
+  // データをJSON文字列に変換して圧縮
+  const jsonData = JSON.stringify(shareData);
+  
+  // LZStringライブラリを使用して圧縮
+  const compressedData = LZString.compressToEncodedURIComponent(jsonData);
+  
+  // 共有リンクを設定
+  const shareModal = document.getElementById("shareModal");
+  const shareLink = document.getElementById("shareLink");
+  shareLink.value = `${window.location.origin}${window.location.pathname.replace("index.html", "record.html")}?data=${compressedData}`;
+  
+  // モーダルを表示
+  shareModal.style.display = "block";
+});
+
+// モーダルのクローズボタン
+document.querySelector(".close-btn").addEventListener("click", () => {
+  document.getElementById("shareModal").style.display = "none";
+});
+
+// コピーボタン
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const shareLink = document.getElementById("shareLink");
+  shareLink.select();
+  document.execCommand("copy");
+  alert("リンクをコピーしました！");
+});
+
+</script>
+</body>
+</html>
