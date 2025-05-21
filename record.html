@@ -98,6 +98,56 @@
   <div id="content"></div>
 
   <script>
+  // === 修正済み addUserFromShareLink 関数 ===
+  function addUserFromShareLink(shareLink) {
+    try {
+      let userData;
+
+      // index.html の圧縮形式リンク対応
+      if (shareLink.includes('?data=')) {
+        const url = new URL(shareLink);
+        const data = url.searchParams.get('data');
+        const jsonStr = LZString.decompressFromEncodedURIComponent(data);
+        const decompressed = JSON.parse(jsonStr);
+
+        userData = {
+          username: 'user-' + Math.random().toString(36).substring(2, 8),
+          displayName: decompressed.t || decompressed.title || "Shared User",
+          data: {
+            today: { completion: 0, total: 0, completed: 0 },
+            yesterday: { completion: 0, total: 0, completed: 0 },
+            weeklyAverage: 0,
+            streaks: [],
+            history: []
+          }
+        };
+
+      } else if (shareLink.startsWith('brainhack://share?data=')) {
+        const base64Data = shareLink.replace('brainhack://share?data=', '');
+        const jsonStr = atob(base64Data);
+        userData = JSON.parse(jsonStr);
+
+      } else {
+        throw new Error("Invalid share link format");
+      }
+
+      const savedUsers = JSON.parse(localStorage.getItem('brainhack-shared-users') || '[]');
+      const existingUserIndex = savedUsers.findIndex(u => u.username === userData.username);
+      if (existingUserIndex >= 0) {
+        savedUsers[existingUserIndex] = userData;
+      } else {
+        savedUsers.push(userData);
+      }
+
+      localStorage.setItem('brainhack-shared-users', JSON.stringify(savedUsers));
+      addUserTab(userData);
+      alert(`User "${userData.displayName || userData.username}" has been added successfully!`);
+
+    } catch (error) {
+      console.error('Error adding user:', error);
+      alert('Invalid share link. Please try again with a valid link.');
+    }
+  }
     const users = {
       me: {
         streak: 5,
@@ -187,4 +237,3 @@
   </script>
 </body>
 </html>
-
