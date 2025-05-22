@@ -404,21 +404,9 @@ function restoreState() {
         filtered.forEach(n => wrapper.appendChild(n.cloneNode(true)));
         c.html = wrapper.innerHTML;
       });
-      state = JSON.stringify(parsed); // ここでstateを更新
+      state = JSON.stringify(parsed);
     }
   }
-  // ここから下の処理は、更新された 'state' 変数を使うべき
-  if (!state) return; // ここで、更新されたstateが空なら処理を終了
-
-  const parsed = JSON.parse(state); // ここで、更新されたstateをパースする
-  parsed.forEach(data => {
-    const cell = document.querySelector(`.cell[data-row='${data.row}'][data-col='${data.col}']`);
-    const editable = cell.querySelector(".editable");
-    const img = cell.querySelector("img");
-    editable.innerHTML = typeof data.html === 'string' ? data.html : "";
-    // ... (残りの復元処理)
-  });
-}
  if (!state) return;
   const parsed = JSON.parse(state);
   parsed.forEach(data => {
